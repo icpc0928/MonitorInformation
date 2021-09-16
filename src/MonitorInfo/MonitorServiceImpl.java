@@ -11,7 +11,7 @@ public class MonitorServiceImpl implements IMonitorService{
     public  static final int CPUTIME = 5000;
     private static final int PERCENT = 100;
     private static final int FAULTLENGTH = 10;
-    private static String PROC_CMD = System.getenv("windir")
+    private static final String PROC_CMD = System.getenv("windir")
             + "\\system32\\wbem\\wmic.exe process get Caption,CommandLine,"
             + "KernelModeTime,ReadOperationCount,ThreadCount,UserModeTime,WriteOperationCount";
     private long[] initCpuInfo = null;
@@ -87,9 +87,7 @@ public class MonitorServiceImpl implements IMonitorService{
             if (c1 != null) {
                 long idletime = c1[0] - initCpuInfo[0];
                 long busytime = c1[1] - initCpuInfo[1];
-                return Double.valueOf(
-                                PERCENT * (busytime) / (busytime + idletime))
-                        .doubleValue();
+                return (double) (PERCENT * (busytime) / (busytime + idletime));
             } else {
                 return 0.0;
             }
@@ -126,27 +124,19 @@ public class MonitorServiceImpl implements IMonitorService{
                 // ThreadCount,UserModeTime,WriteOperation
                 String caption = Bytes.substring(line, capidx, cmdidx - 1).trim();
                 String cmd = Bytes.substring(line, cmdidx, kmtidx - 1).trim();
-                if (cmd.indexOf("wmic.exe") >= 0) {
+                if (cmd.contains("wmic.exe")) {
                     continue;
                 }
                 // log.info("line="+line);
                 if (caption.equals("System Idle Process")
                         || caption.equals("System")) {
-                    idletime += Long.valueOf(
-                                    Bytes.substring(line, kmtidx, rocidx - 1).trim())
-                            .longValue();
-                    idletime += Long.valueOf(
-                                    Bytes.substring(line, umtidx, wocidx - 1).trim())
-                            .longValue();
+                    idletime += Long.parseLong(Bytes.substring(line, kmtidx, rocidx - 1).trim());
+                    idletime += Long.parseLong(Bytes.substring(line, umtidx, wocidx - 1).trim());
                     continue;
                 }
 
-                kneltime += Long.valueOf(
-                                Bytes.substring(line, kmtidx, rocidx - 1).trim())
-                        .longValue();
-                usertime += Long.valueOf(
-                                Bytes.substring(line, umtidx, wocidx - 1).trim())
-                        .longValue();
+                kneltime += Long.parseLong(Bytes.substring(line, kmtidx, rocidx - 1).trim());
+                usertime += Long.parseLong(Bytes.substring(line, umtidx, wocidx - 1).trim());
             }
             retn[0] = idletime;
             retn[1] = kneltime + usertime;
